@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cybershuttle-tune"
-version = "0.1.1"
+version = "0.1.2"
 description = "Parameter Tunning Library for CyberShuttle"
 authors = [
     "Dimuthu Wannipurage <dimuthuw@gatech.edu>",
