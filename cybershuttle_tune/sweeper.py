@@ -32,8 +32,6 @@ def generate_inputs(job_name, template_dir, parameter_values, working_dir):
             with open(os.path.join(input_dir, template_file), "w") as text_file:
                 text_file.write(content)
 
-    print(all_variable_values)
-
 def sweep_params(access_token, job_name, application_name,
                  computation_resource_name, working_dir, config_file_location):
 
@@ -53,7 +51,7 @@ def sweep_params(access_token, job_name, application_name,
 
         with open(os.path.join(job_input_path, "summary.txt"), 'a+') as f:
             f.write(sub_dir + ":" + ex_id + "\n")
-        print(ex_id)
+        print("Airavata experiment " + ex_id + " was launched for sweep config " + sub_dir)
 
 
 

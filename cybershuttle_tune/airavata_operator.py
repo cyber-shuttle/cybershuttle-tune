@@ -10,7 +10,6 @@ import os
 
 logger = logging.getLogger('airavata_sdk.clients')
 logger.setLevel(logging.INFO)
-AUTH_URL = "https://neuroscience.cybershuttle.org/auth/login-desktop/?show-code=true"
 
 class AiravataOperator:
 
@@ -19,9 +18,6 @@ class AiravataOperator:
         self.api_server_client = APIServerClient(configuration_file_location)
         self.gateway_conf = GatewaySettings(configuration_file_location)
         self.experiment_conf = ExperimentSettings(configuration_file_location)
-    def authenticate_info(self, gateway_id):
-        print("Goto following URL and provide the access token")
-        print(AUTH_URL)
 
     def get_airavata_token(self, access_token, gateway_id):
         decode = jwt.decode(access_token, options={"verify_signature": False})
@@ -32,10 +28,31 @@ class AiravataOperator:
         }
 
         return  AuthzToken(accessToken=access_token, claimsMap=claimsMap)
-    def get_application_list(self, access_token, gateway_id):
-        airavata_token = self.get_airavata_token(access_token, gateway_id)
-        interfaces = self.api_server_client.get_all_application_interface_names(airavata_token, gateway_id)
-        return interfaces
+    def get_application_list(self, access_token):
+        airavata_token = self.get_airavata_token(access_token, self.gateway_conf.GATEWAY_ID)
+        modules = self.api_server_client.get_all_app_modules(airavata_token, self.gateway_conf.GATEWAY_ID)
+        return modules
+
+    def get_compatible_deployments(self, access_token, application_module_id):
+        airavata_token = self.get_airavata_token(access_token, self.gateway_conf.GATEWAY_ID)
+
+        api_util = APIServerClientUtil(self.configuration_file_location,
+                                       self.user_id, "",
+                                       self.gateway_conf.GATEWAY_ID,
+                                       access_token)
+        grp_id = api_util.get_group_resource_profile_id(self.experiment_conf.GROUP_RESOURCE_PROFILE_NAME)
+        deployments = self.api_server_client.get_application_deployments_for_app_module_and_group_resource_profile(
+            airavata_token, application_module_id, grp_id)
+
+        return deployments
+
+    def get_compute_resources(self, access_token, resource_ids):
+        airavata_token = self.get_airavata_token(access_token, self.gateway_conf.GATEWAY_ID)
+        resources = []
+        for resource_id in resource_ids:
+            resources.append(self.api_server_client.get_compute_resource(airavata_token, resource_id))
+
+        return resources
 
     def get_group_resource_profile_id(self, access_token, group_resource_profile_name):
         airavata_token = self.get_airavata_token(access_token, self.gateway_conf.GATEWAY_ID)
