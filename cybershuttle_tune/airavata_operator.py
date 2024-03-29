@@ -191,5 +191,11 @@ class AiravataOperator:
         return ex_id
         #if not grp_id:
 
+    def get_experiment_status(self, access_token, experiment_id):
+        airavata_token = self.get_airavata_token(access_token, self.gateway_conf.GATEWAY_ID)
+        status = self.api_server_client.get_experiment_status(airavata_token, experiment_id)
+        return status
+
+
 
 

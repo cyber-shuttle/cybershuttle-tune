@@ -2,3 +2,6 @@
 dist
 venv
 poetry.lock
+inputs
+settings.ini
+workdir
