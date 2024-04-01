@@ -7,6 +7,7 @@ from airavata_sdk.clients.utils.data_model_creation_util import DataModelCreatio
 from airavata_sdk.clients.sftp_file_handling_client import SFTPConnector
 import logging
 import os
+import configparser
 
 logger = logging.getLogger('airavata_sdk.clients')
 logger.setLevel(logging.INFO)
@@ -153,12 +154,14 @@ class AiravataOperator:
                                                                           uploaded_storage_path=path)
                     new_file_mapping[key] = data_uri
             experiment = data_model_util.configure_input_and_outputs(experiment, input_files=None,
-                                                                            application_name=self.experiment_conf.APPLICATION_NAME,
+                                                                            application_name=application_name,
                                                                             file_mapping=new_file_mapping)
 
             print(new_file_mapping)
         else:
             for x in os.listdir(local_input_path):
+                if x == 'inputs.ini': # Ignore command line inputs file. In future, read all input file locations from this one 
+                    continue
                 if os.path.isfile(local_input_path + '/' + x):
                     input_files.append(x)
 
@@ -180,6 +183,37 @@ class AiravataOperator:
         outputs = self.api_server_client.get_application_outputs(airavata_token, app_id)
 
         experiment.experimentOutputs = outputs
+
+        ## Setting up command line inputs
+
+        exp_inputs = experiment.experimentInputs
+        if not exp_inputs:
+            exp_inputs = []
+
+        execution_id = api_util.get_execution_id(application_name)
+        all_inputs = self.api_server_client.get_application_inputs(airavata_token, execution_id)
+
+        config = configparser.ConfigParser()
+        config.read(local_input_path + '/inputs.ini')
+        
+        inputs_to_replace = []
+        for input in all_inputs:
+            for input_name in list(config[application_name].keys()):
+                if input.name.lower() == input_name and input.type < 3: ## Command line input types
+                    input.value  = config[application_name][input_name]
+                    inputs_to_replace.append(input)
+
+        for input in inputs_to_replace:
+            found = False
+            for exp_in in exp_inputs:
+                if exp_in.name == input.name:
+                    exp_in.value = input.value
+                    found = True
+                    continue
+            if not found:
+                exp_inputs.append(input)
+
+        experiment.experimentInputs = exp_inputs
 
         # create experiment
         ex_id = self.api_server_client.create_experiment(airavata_token, self.gateway_conf.GATEWAY_ID, experiment)

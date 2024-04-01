@@ -18,6 +18,7 @@ from pathlib import Path
 from .auth import get_access_token_or_error
 from .auth import do_authorization_flow
 from .auth import get_access_token
+import subprocess
 
 app = typer.Typer()
 
@@ -146,7 +147,7 @@ def status():
     config_file_location, access_token, auth_code = get_config()
     working_dir = typer.prompt("Working directory", "workdir")
     job_name = typer.prompt("Job Name")
-    states = sweeper.get_sweep_status(access_token, job_name, working_dir, config_file_location)
+    states, _ = sweeper.get_sweep_status(access_token, job_name, working_dir, config_file_location)
     headers = ["Experiment Id", "State"]
     print(tabulate(states, headers= headers, tablefmt="grid"))
 
@@ -155,11 +156,11 @@ def output():
     config_file_location, access_token, auth_code = get_config()
     working_dir = typer.prompt("Working directory", "workdir")
     job_name = typer.prompt("Job Name")
-    states = sweeper.get_sweep_status(access_token, job_name, working_dir, config_file_location)
+    states, indexes = sweeper.get_sweep_status(access_token, job_name, working_dir, config_file_location)
     exp_ids_to_download = []
-    for state in states:
+    for state, index in zip(states, indexes):
         if state[1] == 'COMPLETED':
-            exp_ids_to_download.append(state[0])
+            exp_ids_to_download.append((state[0], index))
 
     config = configparser.ConfigParser()
     config.read(config_file_location)
@@ -167,15 +168,24 @@ def output():
 
     print(exp_ids_to_download)
 
-    for exp_id in exp_ids_to_download:
-        download_experiment(access_token, gateway_url, exp_id, working_dir + "/" + job_name + "/"  +exp_id)
+    for (exp_id, index) in exp_ids_to_download:
+        download_experiment(access_token, gateway_url, exp_id, working_dir + "/" + job_name + "/"  + str(index) + "/outputs")
 
 @app.command("analyze")
 def analyze():
     config_file_location, access_token, auth_code = get_config()
     working_dir = typer.prompt("Working directory", "workdir")
     job_name = typer.prompt("Job Name")
-    script_path = typer.prompt("Script Path")
+    #script_path = typer.prompt("Script Path")
+    open_jupyter_notebook(working_dir + "/" + job_name)
+
+
+def open_jupyter_notebook(notebook_dir):
+    try:
+        nb_process = subprocess.Popen(["jupyter", "notebook", "--notebook-dir", notebook_dir])
+        nb_process.wait()
+    except FileNotFoundError:
+        print("Jupyter Notebook is not installed or not in your PATH.")
 
 def download_experiment(get_access_token, gateway_url, experiment_id, output_dir="./workdir"):
     headers = {"Authorization": f"Bearer {get_access_token}"}
@@ -183,7 +193,7 @@ def download_experiment(get_access_token, gateway_url, experiment_id, output_dir
         f"{gateway_url}/sdk/download-experiment-dir/{experiment_id}/",
         headers=headers,
     )
-    print(f"Error {r.status_code}: {r.reason}")
+    print(f"Result {r.status_code}: {r.reason}")
     r.raise_for_status()
     # get name of zip file as returned in HTTP response headers and name the output directory the same
     disposition = r.headers["Content-Disposition"]

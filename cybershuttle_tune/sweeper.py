@@ -85,13 +85,14 @@ def get_sweep_status(access_token, job_name, working_dir, config_file_location):
     df = pd.read_csv(summary_file)
 
     exp_ids = column_data = df['exp_id']
+    indexes = df['index']
 
     states = []
     for exp_id in exp_ids:
         status = airavata_operator.get_experiment_status(access_token, exp_id)
         states.append([exp_id,  ExperimentState._VALUES_TO_NAMES[status.state]])
 
-    return states
+    return states, indexes
 
 def get_grid(parameter_values):
     vals_arr = []

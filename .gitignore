@@ -5,3 +5,5 @@ poetry.lock
 inputs
 settings.ini
 workdir
+__pycache__
+.DS_Store
