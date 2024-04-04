@@ -2,8 +2,9 @@
 dist
 venv
 poetry.lock
-inputs
 settings.ini
 workdir
 __pycache__
 .DS_Store
+examples/notebook/.ipynb_checkpoints
+settings.ini.bk
