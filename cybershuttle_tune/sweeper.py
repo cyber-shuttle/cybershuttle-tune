@@ -76,6 +76,9 @@ def sweep_params(access_token, job_name, application_name,
     # Writing the DataFrame to a CSV file
     df.to_csv(os.path.join(job_input_path, "summary.csv"), index=False, header=True)
 
+    csv_data['job_name'] = job_name
+    csv_data['working_dir'] = working_dir
+    return csv_data
 
 def get_sweep_status(access_token, job_name, working_dir, config_file_location):
     airavata_operator = operator.AiravataOperator(config_file_location)

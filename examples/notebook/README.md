@@ -4,6 +4,7 @@ This is the notebook example for Cybershuttle Tune
 ```
 python3.10 -m venv venv
 source venv/bin/activate
-pip3 install notebook
+pip install notebook
+pip install cybershuttle-tune==0.1.3
 jupyter notebook
 ```
